@@ -1,0 +1,124 @@
+services:
+  consul:
+    image: consul:1.14
+    command: agent -dev -client=0.0.0.0
+    ports:
+      - "8500:8500"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "consul", "info"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+      
+  usersDB:
+    image: mysql:8
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: usersDB
+    volumes:
+      - users_mysql_data:/var/lib/mysql
+      - ./db_inits/init_users.sql:/docker-entrypoint-initdb.d/init_users.sql:ro
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  productsDB:
+    image: mysql:8
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: productsDB
+    volumes:
+      - products_mysql_data:/var/lib/mysql
+      - ./db_inits/init_products.sql:/docker-entrypoint-initdb.d/init_products.sql:ro
+    ports:
+      - "3308:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  ordersDB:
+    image: mysql:8
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ordersDB
+    volumes:
+      - orders_mysql_data:/var/lib/mysql
+      - ./db_inits/init_orders.sql:/docker-entrypoint-initdb.d/init_orders.sql:ro
+    ports:
+      - "3309:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5001:5001"
+    restart: on-failure
+
+  micro-users:
+    build: ./microUsers
+    environment:
+      DB_HOST: usersDB
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: usersDB
+    ports:
+      - "5002:5002"
+    depends_on:
+      usersDB:
+        condition: service_healthy
+    restart: on-failure
+
+  micro-products:
+    build: ./microProducts
+    environment:
+      CONSUL_HOST: consul
+      CONSUL_PORT: "8500"
+      DB_HOST: productsDB
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: productsDB
+    ports:
+      - "5003:5003"
+    depends_on:
+      productsDB:
+        condition: service_healthy
+    restart: on-failure
+
+  micro-orders:
+    build: ./microOrders
+    environment:
+      DB_HOST: ordersDB
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: ordersDB
+    ports:
+      - "5004:5004"
+    depends_on:
+      ordersDB:
+        condition: service_healthy
+      productsDB:
+        condition: service_healthy
+    restart: on-failure
+
+volumes:
+  users_mysql_data:
+  products_mysql_data:
+  orders_mysql_data:
