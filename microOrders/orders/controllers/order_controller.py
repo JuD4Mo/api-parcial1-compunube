@@ -156,7 +156,7 @@ def create_order():
         if qty <= 0:
             return jsonify({'message': f'Cantidad inválida para producto {pid}'}), 400
         if qty > available:
-            return jsonify({'message': f'Producto {pid} no tiene suficiente stock'}), 400
+            return jsonify({'message': f'Producto {pid} no tiene suficiente stock'}), 409
 
         validated.append({
             'id': pid,
