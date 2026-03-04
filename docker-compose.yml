@@ -105,6 +105,9 @@ services:
   micro-orders:
     build: ./microOrders
     environment:
+      CONSUL_HOST: consul
+      CONSUL_PORT: "8500"
+      PRODUCTS_SERVICE: micro-products
       DB_HOST: ordersDB
       DB_USER: root
       DB_PASSWORD: root
