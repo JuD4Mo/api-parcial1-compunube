@@ -33,7 +33,9 @@ def get_products_base():
     address = service_info.get("Address") or data[0]["Node"]["Address"]
     port = service_info["Port"]
 
-    return f"http://{address}:{port}/api/products"
+    base = f"http://{address}:{port}/api/products"
+    print(f"[ORDERS] Consul resolved PRODUCTS base URL -> {base}", flush=True)
+    return base
 
 
 @order_controller.route('/api/orders', methods=['GET'])
